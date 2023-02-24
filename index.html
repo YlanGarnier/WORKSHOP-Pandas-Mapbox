@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Display a map on a webpage</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.13.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div id="map"></div>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZWlpeG8iLCJhIjoiY2xlaWN6ZHZ2MDA4dDNvcGdnZDJsajN3ZCJ9.6L9Sri_l0F_aB5RCxdEj6Q';
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+            style: 'mapbox://styles/mapbox/streets-v12', // style URL
+            center: [-74.5, 40], // starting position [lng, lat]
+            zoom: 9 // starting zoom
+        });
+
+        // Create a default Marker and add it to the map.
+        const marker1 = new mapboxgl.Marker()
+            .setLngLat([2.349014, 48.864716]) // Paris
+            .addTo(map);
+
+        // Create a default Marker, colored black, rotated 45 degrees.
+        const marker2 = new mapboxgl.Marker({ color: 'black', rotation: 45 })
+            .setLngLat([12.65147, 55.608166]) // Copenhagen
+            .addTo(map);
+
+        // Ptits étude ethnique
+        map.on('load', () => {
+            // Add the vector tileset as a source.
+            map.addSource('ethnicity', {
+                type: 'vector',
+                url: 'mapbox://eiixo.bbmk1znx'
+            });
+            map.addLayer(
+                {
+                    'id': 'ville',
+                    'type': 'circle',
+                    'source': 'ethnicity',
+                    'source-layer': 'data-2m8tk9',
+                    'paint': {
+                        // Make circles larger as the user zooms from z12 to z22.
+                        'circle-radius': {
+                            'base': 3,
+                            'stops': [
+                                [12, 5],
+                                [22, 180]
+                            ]
+                        },
+                        // Color circles by ethnicity, using a `match` expression.
+                        'circle-color': '#ff0000'
+                    }
+                },
+                // Place polygons under labels, roads and buildings.
+                'aeroway-polygon'
+            );
+            map.on('mousemove', 'ville', function (e) {
+                var coordinates = e.features[0].geometry.coordinates.slice();
+                var commune = e.features[0].properties.ville
+                var prix_valeur = e.features[0].properties.prix_valeur
+                var prix_nom = e.features[0].properties.prix_nom
+
+                var data = ''.concat(commune, " ", prix_nom, " : ", prix_valeur)
+
+                while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                    coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                }
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(data)
+                    .addTo(map);
+            });
+
+            map.on('mouseenter', 'ville', function () {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            map.on('mouseleave', 'ville', function () {
+                map.getCanvas().style.cursor = '';
+            });
+        });
+    </script>
+
+</body>
+
+</html>
